@@ -2,15 +2,17 @@
 ==
 Project integration
 --
-    * Maven
-    * JPA + MySQL
-    * JSP
+* Maven
+* JPA + MySQL
+* JSP
+
 Third party integration
 --
-    * Druid Connector pool
-    * FastJSON
-    * Interceptor
-    * JavaMail
+* Druid Connector pool
+* FastJSON
+* Interceptor
+* JavaMail
+
 Add JSP support
 --
 * **打包方式改为war方式**：
@@ -25,7 +27,7 @@ Add JSP support
 >* Creating a custom error.jsp page won’t override the default view for error handling, custom error pages should be used instead.
 
 [参考Developing web applications](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-developing-web-applications.html#boot-features-jsp-limitations)
-* **添加JSP解析引擎：**
+* **添加JSP解析引擎以及JSTL：**
 ```XML
 <!-- spring boot tomcat jsp support init -->
 <dependency>
@@ -34,7 +36,7 @@ Add JSP support
     <version>8.5.6</version>
 </dependency>
 ```
-以及JSTL（JSP标准标签库）支持：
+JSTL（JSP标准标签库）支持：
 ```xml
 <!-- jstl support init -->
 <dependency>
