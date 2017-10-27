@@ -19,6 +19,7 @@ public class DruidConfiguration {
 
     /**
      * Config servlet
+     *
      * @return servlet registration Bean
      */
     @Bean
@@ -41,6 +42,7 @@ public class DruidConfiguration {
 
     /**
      * Config filter
+     *
      * @return filter registration Bean
      */
     @Bean

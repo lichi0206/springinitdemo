@@ -14,7 +14,7 @@ import java.io.Serializable;
  */
 
 @Entity(name = "user")
-public class User implements Serializable{
+public class User implements Serializable {
 
     @Id
     @GeneratedValue
@@ -24,7 +24,7 @@ public class User implements Serializable{
     @Column(name = "userid")
     private int userId;
 
-    @Column(name="user_no")
+    @Column(name = "user_no")
     private String userNo;
 
     @Column(name = "username")

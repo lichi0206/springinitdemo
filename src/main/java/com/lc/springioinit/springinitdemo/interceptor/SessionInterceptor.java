@@ -12,15 +12,17 @@ import javax.servlet.http.HttpServletResponse;
  * @auther lichi
  * @create 2017-10-21 19:33
  */
-public class SessionInterceptor implements HandlerInterceptor{
+public class SessionInterceptor implements HandlerInterceptor {
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception{
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
         System.out.println(request.getRequestURI());
-        if(request.getRequestURI().equals("/user/login") || request.getRequestURI().equals("/user/login_view"))
+        // 登陆不拦截
+        if (request.getRequestURI().equals("/user/login") || request.getRequestURI().equals("/user/login_view"))
             return true;
+        // 验证Session是否存在
         Object obj = request.getSession().getAttribute("_session_user");
-        if(obj == null) {
+        if (obj == null) {
             response.sendRedirect("/user/login_view");
             return false;
         }

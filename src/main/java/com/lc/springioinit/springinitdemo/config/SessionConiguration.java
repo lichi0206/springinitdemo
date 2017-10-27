@@ -12,10 +12,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * @create 2017-10-21 19:38
  */
 @Configuration
-public class SessionConiguration extends WebMvcConfigurerAdapter{
+public class SessionConiguration extends WebMvcConfigurerAdapter {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(new SessionInterceptor()).addPathPatterns("/**");
+        registry.addInterceptor(new SessionInterceptor()).addPathPatterns("/**");
     }
 }

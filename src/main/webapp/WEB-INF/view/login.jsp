@@ -11,9 +11,9 @@
     <title>Login</title>
 </head>
 <body>
-<form method="get", action="/user/login">
-    Username: <input type="text", name="username"/><br/>
-    Password: <input type="text", name="password"/><br/>
+<form method="get" , action="/user/login">
+    Username: <input type="text" , name="userNo"/><br/>
+    Password: <input type="text" , name="password"/><br/>
     <input type="submit" value="login"/>
 </form>
 </body>
