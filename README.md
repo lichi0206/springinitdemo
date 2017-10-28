@@ -97,3 +97,22 @@ public ModelAndView login(){
 }
 ```
 正常`Return "Stirng"`将会返回字符串或者JSON数据（需要在`@RequestMapping`中指定：`produces = "application/json; charset=UTF-8"`）
+
+Java Mail
+--
+构建发送过程：
+1. 构建一个继承自`javax.mail.Authenticator`的具体类，并重写里面的`getPasswordAuthentication()`方法。此类是用作登录校验的，以确保你对该邮箱有发送邮件的权利。
+2. 构建一个`properties`文件，该文件中存放`SMTP`服务器地址等参数。
+3. 通过构建的`properties`文件和`javax.mail.Authenticator`具体类来创建一个`javax.mail.Session`（`Session`的创建，就相当于登录邮箱一样）。
+4. 构建邮件内容，一般是`javax.mail.internet.MimeMessage`对象，并指定发送人，收信人，主题，内容等等。
+5. 使用`javax.mail.Transport`工具类发送邮件。
+
+发送邮箱需要确认：
+1. POP3/SMTP服务已开启
+2. 获取授权码（非独立密码）
+
+有些邮箱需要使用SSL发送，这类邮箱注意添加：
+```java
+properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+properties.put("mail.smtp.socketFactory.port", "465");
+```

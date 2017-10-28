@@ -1,9 +1,6 @@
 package com.lc.springioinit.springinitdemo.utils;
 
-import javax.mail.Authenticator;
-import javax.mail.Message;
-import javax.mail.Session;
-import javax.mail.Transport;
+import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeUtility;
@@ -74,13 +71,65 @@ public class MailSender {
         if (mail.getContentType() == null)
             mail.setContentType(MailContentTypeEnum.HTML.getValue());
         if (mail.getTitle() == null || mail.getTitle().trim().length() == 0)
-            throw new Exception("邮件标题未设置，请设置（SetTitle()）");
+            throw new Exception("邮件标题未设置，请设置");
         if (mail.getContent() == null || mail.getContent().trim().length() == 0)
             throw new Exception("邮件内容未设置，请设置");
         if (mail.getToList().size() == 0)
             throw new Exception("收件人列表未设置，请设置");
-        // 读取/resources/mail_zh_CN.properties文件内容
+
+        // 读取/resources/mail.properties文件内容
         final PropertiesUtil propertiesUtil = new PropertiesUtil("mail");
+
+        Properties properties = setMailProperties(propertiesUtil, true);
+
+        // 创建邮件会话
+        Session mailSession = Session.getInstance(properties, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                // user name & password
+                String userName = properties.getProperty("mail.user");
+                String password = properties.getProperty("mail.password");
+                return new javax.mail.PasswordAuthentication(userName, password);
+            }
+        });
+        mailSession.setDebug(true); // 查看邮件发送过程
+
+        // 创建邮件消息
+        MimeMessage message = new MimeMessage(mailSession);
+
+        // 设置发件人
+        String nickName = MimeUtility.encodeText(propertiesUtil.getValue("mail.from.nickName"));
+        InternetAddress from = new InternetAddress(nickName + "<" + properties.getProperty("mail.user") + ">");
+        message.setFrom(from);
+
+        // 设置邮件标题
+        message.setSubject(mail.getTitle());
+        // HTML OR TEXT
+        if (mail.getContentType().equals(MailContentTypeEnum.HTML.getValue()))
+            message.setContent(mail.getContent(), mail.getContentType());
+        else if (mail.getContentType().equals(MailContentTypeEnum.TEXT.getValue()))
+            message.setText(mail.getContent());
+
+        // 发送邮箱地址
+        List<String> targets = mail.getToList();
+        for (String target : targets) {
+            try {
+                InternetAddress to = new InternetAddress(target);
+                message.addRecipient(Message.RecipientType.TO, to);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 发送邮件
+        Transport.send(message);
+    }
+
+    /**
+     * 设置邮箱基本属性
+     * @return
+     */
+    public Properties setMailProperties(PropertiesUtil propertiesUtil, boolean ssl) {
         // 创建Properties类用来记录邮箱属性
         final Properties properties = new Properties();
         // 表示smtp发送邮件，必须进行身份验证
@@ -93,45 +142,15 @@ public class MailSender {
         properties.put("mail.user", propertiesUtil.getValue("mail.from.address"));
         // 设置发送邮箱的16位SMTP口令
         properties.put("mail.password", propertiesUtil.getValue("mail.from.smtp.pwd"));
-        // 构建授权信息，用于进行SMTP身份验证
-        Authenticator authenticator = new Authenticator() {
-            @Override
-            protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
-                // user name & password
-                String userName = properties.getProperty("mail.user");
-                String password = properties.getProperty("mail.password");
-                return new javax.mail.PasswordAuthentication(userName, password);
-            }
-        };
-        // 使用环境属性和授权信息，创建邮件会话
-        Session mailSession = Session.getInstance(properties, authenticator);
-        // 创建邮件消息
-        MimeMessage message = new MimeMessage(mailSession);
-        // 设置发件人
-        String nickName = MimeUtility.encodeText(propertiesUtil.getValue("mail.from.nickName"));
-        InternetAddress from = new InternetAddress(nickName + "<" + properties.getProperty("mail.user") + ">");
-        message.setFrom(from);
-        // 设置邮件标题
-        message.setSubject(mail.getTitle());
-        // HTML发送邮件
-        if (mail.getContentType().equals(MailContentTypeEnum.HTML.getValue()))
-            message.setContent(mail.getContent(), mail.getContentType());
-            // 文本发送邮件
-        else if (mail.getContentType().equals(MailContentTypeEnum.TEXT.getValue()))
-            message.setText(mail.getContent());
-        // 发送邮箱地址
-        List<String> targets = mail.getToList();
-        for (String target : targets) {
-            try {
-                // 设置收件人邮箱
-                InternetAddress to = new InternetAddress(target);
-                message.setRecipient(Message.RecipientType.TO, to);
-            } catch (Exception e) {
-                continue;
-            }
+
+        // SSL发送
+        if(ssl) {
+            properties.put("mail.smtp.socketFactory.class", propertiesUtil.getValue("mail.smtp.socketFactory.class"));
+            properties.put("mail.smtp.socketFactory.port", propertiesUtil.getValue("mail.smtp.socketFactory.port"));
+            properties.put("mail.transport.protocol", propertiesUtil.getValue("mail.transport.protocol"));
         }
-        // 发送邮件
-        Transport.send(message);
+
+        return properties;
     }
 
 }
