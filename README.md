@@ -5,6 +5,7 @@ Project integration
 * Maven
 * JPA + MySQL
 * JSP
+* Servlet support
 
 Third party integration
 --
@@ -12,6 +13,8 @@ Third party integration
 * FastJSON
 * Interceptor
 * JavaMail
+* Spring Boot request logger
+* Static resource path forwarding
 
 Add JSP support
 --
@@ -115,4 +118,84 @@ Java Mail
 ```java
 properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 properties.put("mail.smtp.socketFactory.port", "465");
+```
+
+Spring Boot Request Logger
+--
+通过设置拦截器，拦截所有请求的`Request`和`Response`，并将这些记录在数据库中，通过重写拦截器中的`preHandle方法`和`afterCompletion`方法分别将`Request`数据和
+`Response`数据存储在`Logger Entity`中，最后将整个日志实体类存储到数据库中。
+
+这里要注意一点，拦截器中无法通过`SpringBean`的方式注入`Logger实体`的JPA类，也就无法通过这种方式将最后的日志实体通过JPA持久化，所以通过另一种方式来获取（Filter比Bean先加载）。
+
+获取方式：
+`WebApplicationContextUtils`可以通过`HttpServletRequest`请求对象的上下文（`ServetCotext`）获取Spring管理的Bean，
+通过`WebApplicationContextUtils`内部的`getRequiredWebApplicationContext`方法获取到
+`BeanFactory`（实体工厂类），从而通过`BeanFactory`的`getBean()`方法就可以拿到`SpringDataJPA`为
+我们管理的`Logger JPA持久化数据接口实例`，代码如下：
+```java
+private <T> T getDao(Class<T> clazz, HttpServletRequest request) {
+    BeanFactory factory = WebApplicationContextUtils.getRequiredWebApplicationContext(request.getServletContext());
+    return factory.getBean(clazz);
+}
+```
+创建日志请求，首先我们在`日志拦截器的 preHandle 方法中`创建`Logger Entity`，将一些必要的参数记录后，
+将实体类写入`HttpServletRequest`中，接下来请求会进入对应的具体`Spring MVC 控制器方法`，在最后
+渲染视图即将返回前台前会开始执行`日志拦截器中的 afterCompeletion 方法`，这个方法中记录了请求
+状态码、请求时间戳、请求返回值等内容。
+
+当然，最后，一定不要忘了将日志拦截器添加到Spring Boot项目中，使用`@Configuration`添加，示例代码如下：
+```java
+@Configuration
+public class LoggerConfiguration extends WebMvcConfigurerAdapter{
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new LoggerInterceptor()).addPathPatterns("/**");
+    }
+}
+```
+
+Static resource path forwarding
+--
+Spring Boot默认配置了静态资源地址转发，我们只需要将资源文件放在`/resources/static/`目录下，
+就可以直接通过网页访问这些静态资源了，但是这样会暴露项目结构，所以添加配置做一个静态资源路径转发：
+```java
+@Configuration
+public class StaticPathConfiguration extends WebMvcConfigurerAdapter{
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("lc/resources/**").addResourceLocations("classpath:/static/");
+    }
+}
+```
+
+Servlet support
+--
+Web开发使用`Controller`基本上可以完成大部分需求，但是我们还可能会用到`Servlet、Filter、Listener、Interceptor`等等。
+当使用Spring Boot时，嵌入式Servlet容器通过扫描注解的方式注册`Servlet、Filter`和`Servlet规范的所有监听器`（如HttpSessionListener监听器）
+
+在spring boot中添加自己的Servlet有两种方法，代码注册Servlet和注解自动注册（Filter和Listener也是如此）
+1. 代码注册通过`ServletRegistrationBean`、`FilterRegistrationBean`和`ServletListenerRegistrationBean`获得控制。 
+   也可以通过实现`ServletContextInitializer`接口直接注册。
+2. 在`SpringBootApplication`上使用`@ServletComponentScan`注解后（或者通过`@configuration`配置`@ServeltComponentScan`），`Servlet、Filter、Listener`可以直接通过`@WebServlet、@WebFilter、@WebListener`注解自动注册，无需其他代码。代码如下：
+```java
+@WebServlet(urlPatterns = "/test")
+public class TestServlet extends HttpServlet{
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("utf-8");
+
+        PrintWriter writer = resp.getWriter();
+        writer.write("执行TestServlet中的doGet方法成功");
+        writer.close();
+    }
+}
+```
+```java
+@Configuration
+@ServletComponentScan
+public class ServletConfiguration {
+}
 ```
