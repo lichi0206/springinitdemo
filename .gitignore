@@ -23,3 +23,5 @@ dist/
 nbdist/
 .nb-gradle/
 /src/main/resources/mail.properties
+/logs/*.log
+/src/main/webapp/upload

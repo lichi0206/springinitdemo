@@ -13,6 +13,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.transform.Result;
 
 /**
  * Controller: login
@@ -30,7 +31,7 @@ public class LoginController {
     @RequestMapping(value = "/login")
     public ModelAndView login(User user, HttpServletRequest request) {
         boolean flag = true;
-        String page = "index";
+        String page = "fileupload";
 
         // Query whether user exist
         User userIsExist = userJPA.findOne(new Specification<User>() {

@@ -16,6 +16,6 @@ public class SessionConiguration extends WebMvcConfigurerAdapter {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new SessionInterceptor()).addPathPatterns("/**");
+//        registry.addInterceptor(new SessionInterceptor()).addPathPatterns("/**");
     }
 }

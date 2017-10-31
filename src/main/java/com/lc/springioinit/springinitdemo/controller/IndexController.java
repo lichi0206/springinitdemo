@@ -19,7 +19,7 @@ public class IndexController {
         return "login";
     }
 
-    @RequestMapping(value = "/index", method = RequestMethod.GET)
+    @RequestMapping(value = "/index2", method = RequestMethod.GET)
     public String index() {
         return "index";
     }

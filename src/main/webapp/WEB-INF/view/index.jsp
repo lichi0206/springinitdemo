@@ -11,6 +11,6 @@
     <title>Index</title>
 </head>
 <body>
-This is index page.
+Welcome:${name}
 </body>
 </html>
