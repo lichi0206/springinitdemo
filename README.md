@@ -105,7 +105,7 @@ public ModelAndView login(){
 
 乱码问题
 --
-###`@Controller`返回值乱码问题：
+**_`@Controller`返回值乱码问题：_**
 
 在`produce`参数中加入编码声明`charset=UTF-8`，示例代码如下：
 ```java
@@ -236,7 +236,7 @@ Custom LogBack
 spring boot内部使用`Commons Logging`来记录日志，但也保留外部接口可以让一些日志框架来进行实现，例如`Java Util Logging`,`Log4J2`还有`Logback`。如果你想用某一种日志框架来进行实现的话，就必须先配置，默认情况下，spring boot使用Logback作为日志实现的框架。
 SpringBoot内部集成了`LogBack`日志依赖，SpringBoot默认使用LogBack记录日志信息，默认根据`base.xml`配置内容来输出到控制台和文件之中。
 
-###LogBack读取配置文件的步骤
+**_LogBack读取配置文件的步骤_**
 - 尝试classpath下查找文件`logback-test.xml`
 - 如果文件不存在，尝试查找`logback.xml`
 - 如果两个文件都不存在，LogBack用`BasicConfiguration`自动对自己进行最小化配置，这样既实现了上面我们不需要添加任何配置就可以输出到控制台日志信息。
@@ -326,7 +326,7 @@ SpringBoot内部集成了`LogBack`日志依赖，SpringBoot默认使用LogBack�
     </appender>-->
 </configuration>
 ```
-####LogBack取代log4j的理由：
+**_LogBack取代log4j的理由_**
 1. 更快的实现
     Logback的内核重写了，在一些关键执行路径上性能提升10倍以上。而且logback不仅性能提升了，初始化内存加载也更小了。
 2. 非常充分的测试
@@ -353,7 +353,8 @@ SpringBoot内部集成了`LogBack`日志依赖，SpringBoot默认使用LogBack�
     Logback在打出堆栈树日志时，会带上包的数据。
 13. 自动去除旧的日志文件
     通过设置TimeBasedRollingPolicy或者SizeAndTimeBasedFNATP的maxHistory属性，你可以控制已经产生日志文件的最大数量。如果设置maxHistory 12，那那些log文件超过12个月的都会被自动移除。
-###logBack配置介绍
+
+**_logBack配置介绍_**
 1. Logger、appender及layout
     Logger作为日志的记录器，把它关联到应用的对应的context上后，主要用于存放日志对象，也可以定义日志类型、级别。
 Appender主要用于指定日志输出的目的地，目的地可以是控制台、文件、远程套接字服务器、 MySQL、 PostreSQL、 Oracle和其他数据库、 JMS和远程UNIX Syslog守护进程等。 
@@ -365,7 +366,8 @@ Layout 负责把事件转换成字符串，格式化的日志信息的输出。
 4. 打印方法与基本的选择规则
     打印方法决定记录请求的级别。例如，如果 L 是一个 logger 实例，那么，语句 L.info("..")是一条级别为 INFO 的记录语句。记录请求的级别在高于或等于其 logger 的有效级别时被称为被启用，否则，称为被禁用。记录请求级别为 p，其logger的有效级别为 q，只有则当 p>=q时，该请求才会被执行。
     **该规则是 logback 的核心。级别排序为： TRACE < DEBUG < INFO < WARN < ERROR。**
-###采用滚动记录并将INFO、ERROR、DEBUG信息分别记录在不同文件中的示例
+
+**_采用滚动记录并将INFO、ERROR、DEBUG信息分别记录在不同文件中的示例_**
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
