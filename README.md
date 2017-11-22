@@ -8,6 +8,8 @@ Project integration
 * Servlet support
 * Upload File & Files
 * Custom LogBack
+* Custom JPA
+* Paging and Sorting
 
 Third party integration
 --
@@ -17,6 +19,12 @@ Third party integration
 * JavaMail
 * Spring Boot request logger
 * Static resource path forwarding
+* Query dsl
+* Hibernate validator
+
+Important integration
+--
+* Redis
 
 Add JSP support
 --
@@ -510,3 +518,358 @@ Layout 负责把事件转换成字符串，格式化的日志信息的输出。
     </root>
 </configuration>
 ```
+
+Custom JPA
+--
+
+**_`JpaRepository`接口_**
+`JpaRepository`接口内继承了`PagingAndSortingRepository`接口和`QueryByExampleExecutor`接口，`PagingAndSortingRepository`接口
+内部又继承自`CrudRepository`接口
+```java
+@NoRepositoryBean
+public interface JpaRepository<T, ID extends Serializable> extends PagingAndSortingRepository<T, ID>, QueryByExampleExecutor<T> {
+    List<T> findAll();
+
+    List<T> findAll(Sort var1);
+
+    List<T> findAll(Iterable<ID> var1);
+
+    <S extends T> List<S> save(Iterable<S> var1);
+
+    void flush();
+
+    <S extends T> S saveAndFlush(S var1);
+
+    void deleteInBatch(Iterable<T> var1);
+
+    void deleteAllInBatch();
+
+    T getOne(ID var1);
+
+    <S extends T> List<S> findAll(Example<S> var1);
+
+    <S extends T> List<S> findAll(Example<S> var1, Sort var2);
+}
+
+```
+
+**_`CrudRepository`接口_**
+该接口包含了最简单的CRUD：Create/Read/Update/Delete方法，还包括Count/Exist方法
+```java
+@NoRepositoryBean
+public interface CrudRepository<T, ID extends Serializable> extends Repository<T, ID> {
+    <S extends T> S save(S var1);
+
+    <S extends T> Iterable<S> save(Iterable<S> var1);
+
+    T findOne(ID var1);
+
+    boolean exists(ID var1);
+
+    Iterable<T> findAll();
+
+    Iterable<T> findAll(Iterable<ID> var1);
+
+    long count();
+
+    void delete(ID var1);
+
+    void delete(T var1);
+
+    void delete(Iterable<? extends T> var1);
+
+    void deleteAll();
+}
+```
+
+**_`PagingAndSortingRepository`接口_**
+继承自`CrudRepository`接口，包含最基本的CRUD方法，该接口内部还加了两个方法：
+```java
+@NoRepositoryBean
+public interface PagingAndSortingRepository<T, ID extends Serializable> extends CrudRepository<T, ID> {
+    Iterable<T> findAll(Sort var1);
+
+    Page<T> findAll(Pageable var1);
+}
+```
+`Iterable`/`Page`，为分页和排序而生
+
+**_`QueryByExampleRepository`接口_**
+该接口提供条件查询，复杂查询，可以通过Example方式查询数据
+```java
+public interface QueryByExampleExecutor<T> {
+    <S extends T> S findOne(Example<S> var1);
+
+    <S extends T> Iterable<S> findAll(Example<S> var1);
+
+    <S extends T> Iterable<S> findAll(Example<S> var1, Sort var2);
+
+    <S extends T> Page<S> findAll(Example<S> var1, Pageable var2);
+
+    <S extends T> long count(Example<S> var1);
+
+    <S extends T> boolean exists(Example<S> var1);
+}
+
+```
+
+**_`Jpa` 内部的 `save` 方法_**
+>注意：`SpringDataJPA`内又个save方法，这个方法不仅是用来添加数据使用，当我们传入主键的值
+时则根据主键的值完成数据更新操作
+
+**_`@Query`注解自定义SQL_**
+`SpringDataJPA`内部有两种方式可以实现自定义SQL功能，我们先来讲述使用注解的方式，
+后期在`SpringDataJPA`核心技术专题内再详细的讲解使用`EntityManager`是如何完成自定义SQL、调用
+存储过程、视图等等操作的
+
+```java
+@Query(value = "select * from user where age > ?1", nativeQuery = true)
+public List<User> nativeQuery(int age);
+```
+
+>`@Query`是用来配置自定义SQL的注解，后面参数`nativeQuery = true`才是表明了使用原生
+的sql，如果不配置，默认是false，则使用HQL查询方式
+
+**_@Query配合@Modifying_**
+从名字上可以看到我们的`@Query`注解好像只是用来查询的，但是如果配合`@Modifying`注解一共使用，则
+可以完成数据的删除、添加、更新操作
+```java
+@Transactional
+@Modifying
+@Query(value = "DELETE FROM USER WHERE username=?1 AND password=?2", nativeQuery = true)
+public void deleteQuery(String userName, String pwd);
+```
+>如果不加`@TransActional`注解，会抛出异常异常：`TranscationRequiredException`，意思
+就是你当前的操作给你抛出了需要事务异常，`SpringDataJPA`自定义SQL时需要在对应的接口或者调用接口
+的地方添加事务注解`@Transactional`，来开启事务自动化管理
+
+**_`@NoRepositoryBean`_**
+>Spring开源程序猿在命名规则上应该是比较严格的，从名字上我们几乎就可以判断出用途，这个注解如果
+配置在继承了`JpaRepository`接口以及其他`SpringDataJpa`内部的接口的子接口时，子接口不被作
+为一个`Repository`创建代理实现类。
+
+Paging and Sorting
+--
+```java
+@RequestMapping(value = "/cutPage")
+public List<User> cutPage(int page) {
+    User user = new User();
+    user.setSize(2);
+    user.setPage(page);
+    // 获取排序对象
+    Sort.Direction sort_direction = Sort.Direction.ASC.toString().equalsIgnoreCase(user.getSord()) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    // 构建排序，参数
+    Sort sort = new Sort(sort_direction, user.getSidx());
+    // 构建分页对象
+    PageRequest pageRequest = new PageRequest(user.getPage() - 1, user.getSize(), sort);
+    // 执行分页查询
+    return userJPA.findAll(pageRequest).getContent();
+}
+```
+
+Query DSL
+--
+`QueryDSL`是一个Java语言编写的通用查询框架，专注于通过JavaAPI方式构建安全的
+SQL查询。`QueryDSL`可以应用到NoSQL数据库上，`QueryDSL`查询框架可以在任何支持
+的ORM框架或者SQL平台上以一种通用的API方式来构建SQL。目前`QueryDSL` 支持的平台
+包扣`JPA、JDO、SQL、Java Collections、RDF、Lucene、Hibernate Serch、MongoDB`等
+
+添加POM
+```xml
+<dependencies>
+    <!-- Query DSL -->
+    <dependency>
+        <groupId>com.querydsl</groupId>
+        <artifactId>querydsl-jpa</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.querydsl</groupId>
+        <artifactId>querydsl-apt</artifactId>
+        <scope>provided</scope>
+    </dependency>
+</dependencies>
+<build>
+    <plugin>
+        <groupId>com.mysema.maven</groupId>
+        <artifactId>apt-maven-plugin</artifactId>
+        <version>1.1.3</version>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>process</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>target/generated-sources/java</outputDirectory>
+                    <processor>com.querydsl.apt.jpa.JPAAnnotationProcessor</processor>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+    </plugins>
+</build>
+```
+
+具体使用方法请见：`QueryController.java`，`GoodJPA.java`，`Inquirer.java`
+
+Hibernate validator
+--
+Spring boot 内置了`Hibernate validator`，所以我们可以直接使用来做后台验证。内置验证如下：
+```java
+@Null   被注释的元素必须为 null  
+@NotNull    被注释的元素必须不为 null  
+@AssertTrue     被注释的元素必须为 true  
+@AssertFalse    被注释的元素必须为 false  
+@Min(value)     被注释的元素必须是一个数字，其值必须大于等于指定的最小值  
+@Max(value)     被注释的元素必须是一个数字，其值必须小于等于指定的最大值  
+@DecimalMin(value)  被注释的元素必须是一个数字，其值必须大于等于指定的最小值  
+@DecimalMax(value)  被注释的元素必须是一个数字，其值必须小于等于指定的最大值  
+@Size(max=, min=)   被注释的元素的大小必须在指定的范围内  
+@Digits (integer, fraction)     被注释的元素必须是一个数字，其值必须在可接受的范围内  
+@Past   被注释的元素必须是一个过去的日期  
+@Future     被注释的元素必须是一个将来的日期  
+@Pattern(regex=,flag=)  被注释的元素必须符合指定的正则表达式  
+  
+Hibernate Validator 附加的 constraint  
+@NotBlank(message =)   验证字符串非null，且长度必须大于0  
+@Email  被注释的元素必须是电子邮箱地址  
+@Length(min=,max=)  被注释的字符串的大小必须在指定的范围内  
+@NotEmpty   被注释的字符串的必须非空  
+@Range(min=,max=,message=)  被注释的元素必须在合适的范围内  
+```
+
+自定义Validator，请参考validator/FlagValidator.java，validator/FlagValidatorClass.java
+
+Redis
+--
+**_简单介绍_**
+
+这个是比较重要的一个集成，对于一个大型项目来说，尤其是前端页面反复会查询的，比如大型电商
+网站，如果没有一个好的缓存系统，支持高并发大流量的数据访问，可以说是很难做到，有可能最终会
+拖垮整个网站，所以一个好的缓存系统对于现如今的站点来说是非常重要的一个环节
+
+`Redis`完全开源免费，遵守BSD协议，是一个高性能的key-value数据库，三个特点：
+1. 支持数据持久化，可将内存中的数据保存到磁盘中，重启的时候再次加载使用
+2. 不仅支持key-value数据，同时提供list，set，zset，hash等数据结构的存储
+3. 支持数据备份，即master-slave模式的数据备份
+
+优点：
+1. 性能极高 --> 读：110000次/s，写：81000次/s
+2. 丰富的数据类型，支持二进制案例的 Strings, Lists, Hashes, Sets 及 Ordered Sets 数据类型操作
+3. 原子 – Redis的所有操作都是原子性的，意思就是要么成功执行要么失败完全不执行。单个操作是原子性的。多个操作也支持事务，即原子性，通过MULTI和EXEC指令包起来
+4. 丰富的特性 – Redis还支持 publish/subscribe, 通知, key 过期等等特性
+
+**_Redis运行与查看当前缓存_**
+运行：命令行进入Redis解压目录，运行：`redis-server.exe redis.windows.conf`
+
+查看缓存：命令行进入Redis解压目录，运行 `redis-cli.exe` 进入redis命令行模式，然后运行：`keys *` 即可
+列出当前所有缓存
+
+>Redis其他的特性，安装运行及高级用法请参照：[Redis教程](http://www.runoob.com/redis/redis-tutorial.html)
+
+**_集成_**
+
+Spring boot中集成Redis，再pom.xml中添加：
+```xml
+<!-- 添加缓存支持 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+<!-- 添加redis缓存支持 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-redis</artifactId>
+    <version>1.4.3.RELEASE</version>
+</dependency>
+```
+>这里需要注意一点，集成的时候一定要加上`<version>1.4.3.RELEASE</version>`，否则取不到
+Redis的相关类，如`RedisTemplete.java`
+
+随后添加配置，再`application.properties`中添加：
+```xml
+#配置redis数据库连接池
+redis.host=127.0.0.1
+redis.port=6373
+redis.pool.max-idle=20
+redis.pool.min-idle=1
+redis.pool.max-active=20
+redis.pool.max-wait=60000
+redis.database=0 #默认是索引为0的数据库
+```
+
+随后创建`RedisConfiguration`类将Redis的Bean注入到SpringBoot中去：
+```java
+@Configuration
+@EnableCaching
+public class RedisConfiguration extends JCacheConfigurerSupport{
+
+/**
+ * 自定义key生成规则
+ * @return
+ */
+@Override
+public KeyGenerator keyGenerator() {
+    return new KeyGenerator() {
+        @Override
+        public Object generate(Object o, Method method, Object... objects) {
+            StringBuffer sb = new StringBuffer();
+            // 追加类名
+            sb.append(o.getClass().getName());
+            // 追加方法名
+            sb.append(method.getName());
+            // 遍历参数并追加
+            for (Object object : objects) {
+                sb.append(object.toString());
+            }
+            System.out.println("调用Redis缓存key：" + sb.toString());
+            return sb.toString();
+        }
+    };
+}
+
+/**
+ * 采用redisCacheManager作为缓存管理器
+ * @param redisTemplate
+ * @return
+ */
+@Bean
+public CacheManager cacheManager(RedisTemplate redisTemplate) {
+    return new RedisCacheManager(redisTemplate);
+}
+
+}
+```
+
+其中`cacheManager`方法是使用Redis代替springboot中的默认框架，`@EnableCaching`开启项目支持缓存，
+SpringBoot项目启动的时候就会去找自定义配置的`CacheManager`对象并自动应用到项目中。
+
+>该类集成自 `JChcheConfigurerSupport`，并重写了 `keyGenerator`方法，这样在Redis中就会使用
+我们自定义的 `key` 生成算法，更加方便阅读，方便寻找。
+
+编写 `UserService` 类并添加Redis支持：
+```java
+@Service
+@CacheConfig(cacheNames = "user")
+public class UserService {
+
+    @Autowired
+    private UserJPA userJPA;
+
+    @Cacheable
+    public List<User> list() {
+        return userJPA.findAll();
+    }
+}
+```
+`@CacheConfig`：该注解是用来开启声明的类参与缓存,如果方法内的`@Cacheable`注解没有添加`key`值，那么会自动使用`cahceNames`配置参数并且追加方法名。
+`@Cacheable`：配置方法的缓存参数，可自定义缓存的`key`以及`value`。
+>上面这个类中如果不配置key，那么redis会默认为我们生成key，生成的key值很难读懂，所以我们在上一个
+类 `RedisConfiguration` 中实现了自定义key生成方式，避免了看不懂key的情况。
+
+**_Redis常用命令_**
+- flushdb：清空当前数据库。
+- select [index]：选择索引数据库，index为索引值名，如：select 1。
+- del [key]：删除一条指定key的值。
+- keys *：查看数据库内所有的key。
+- flushall：清空所有数据库。
+- quit：退出客户端连接。

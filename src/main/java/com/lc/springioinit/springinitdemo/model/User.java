@@ -1,5 +1,7 @@
 package com.lc.springioinit.springinitdemo.model;
 
+import com.lc.springioinit.springinitdemo.base.BaseEntity;
+
 import javax.persistence.*;
 import java.io.Serializable;
 
@@ -11,12 +13,12 @@ import java.io.Serializable;
  */
 
 @Entity(name = "user")
-public class User implements Serializable {
+public class User extends BaseEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Long id;
 
     @Column(name = "userid")
     private int userId;
@@ -36,13 +38,24 @@ public class User implements Serializable {
     @Column(name = "age")
     private int age;
 
+    @Column(name = "sord")
+    private String sord;
+
+    public String getSord() {
+        return sord;
+    }
+
+    public void setSord(String sord) {
+        this.sord = sord;
+    }
+
     private String password;
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
