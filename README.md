@@ -59,8 +59,10 @@ JSTL（JSP标准标签库）支持：
     <version>1.2</version>
 </dependency>
 ```
-上述代码一定要注意，不要在`<dependency>`标签里面添加`<scope>provide</scope>`，否则会访问不到JSP页面
+
+>上述代码一定要注意，不要在`<dependency>`标签里面添加`<scope>provide</scope>`，否则会访问不到JSP页面
 不需要加下述`<dependency>`
+
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -245,6 +247,7 @@ spring boot内部使用`Commons Logging`来记录日志，但也保留外部接�
 SpringBoot内部集成了`LogBack`日志依赖，SpringBoot默认使用LogBack记录日志信息，默认根据`base.xml`配置内容来输出到控制台和文件之中。
 
 **_LogBack读取配置文件的步骤_**
+
 - 尝试classpath下查找文件`logback-test.xml`
 - 如果文件不存在，尝试查找`logback.xml`
 - 如果两个文件都不存在，LogBack用`BasicConfiguration`自动对自己进行最小化配置，这样既实现了上面我们不需要添加任何配置就可以输出到控制台日志信息。
@@ -335,6 +338,7 @@ SpringBoot内部集成了`LogBack`日志依赖，SpringBoot默认使用LogBack�
 </configuration>
 ```
 **_LogBack取代log4j的理由_**
+
 1. 更快的实现
     Logback的内核重写了，在一些关键执行路径上性能提升10倍以上。而且logback不仅性能提升了，初始化内存加载也更小了。
 2. 非常充分的测试
@@ -363,6 +367,7 @@ SpringBoot内部集成了`LogBack`日志依赖，SpringBoot默认使用LogBack�
     通过设置TimeBasedRollingPolicy或者SizeAndTimeBasedFNATP的maxHistory属性，你可以控制已经产生日志文件的最大数量。如果设置maxHistory 12，那那些log文件超过12个月的都会被自动移除。
 
 **_logBack配置介绍_**
+
 1. Logger、appender及layout
     Logger作为日志的记录器，把它关联到应用的对应的context上后，主要用于存放日志对象，也可以定义日志类型、级别。
 Appender主要用于指定日志输出的目的地，目的地可以是控制台、文件、远程套接字服务器、 MySQL、 PostreSQL、 Oracle和其他数据库、 JMS和远程UNIX Syslog守护进程等。 
@@ -376,6 +381,7 @@ Layout 负责把事件转换成字符串，格式化的日志信息的输出。
     **该规则是 logback 的核心。级别排序为： TRACE < DEBUG < INFO < WARN < ERROR。**
 
 **_采用滚动记录并将INFO、ERROR、DEBUG信息分别记录在不同文件中的示例_**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
@@ -523,6 +529,7 @@ Custom JPA
 --
 
 **_`JpaRepository`接口_**
+
 `JpaRepository`接口内继承了`PagingAndSortingRepository`接口和`QueryByExampleExecutor`接口，`PagingAndSortingRepository`接口
 内部又继承自`CrudRepository`接口
 ```java
@@ -554,6 +561,7 @@ public interface JpaRepository<T, ID extends Serializable> extends PagingAndSort
 ```
 
 **_`CrudRepository`接口_**
+
 该接口包含了最简单的CRUD：Create/Read/Update/Delete方法，还包括Count/Exist方法
 ```java
 @NoRepositoryBean
@@ -583,6 +591,7 @@ public interface CrudRepository<T, ID extends Serializable> extends Repository<T
 ```
 
 **_`PagingAndSortingRepository`接口_**
+
 继承自`CrudRepository`接口，包含最基本的CRUD方法，该接口内部还加了两个方法：
 ```java
 @NoRepositoryBean
@@ -595,6 +604,7 @@ public interface PagingAndSortingRepository<T, ID extends Serializable> extends 
 `Iterable`/`Page`，为分页和排序而生
 
 **_`QueryByExampleRepository`接口_**
+
 该接口提供条件查询，复杂查询，可以通过Example方式查询数据
 ```java
 public interface QueryByExampleExecutor<T> {
@@ -614,10 +624,12 @@ public interface QueryByExampleExecutor<T> {
 ```
 
 **_`Jpa` 内部的 `save` 方法_**
+
 >注意：`SpringDataJPA`内又个save方法，这个方法不仅是用来添加数据使用，当我们传入主键的值
 时则根据主键的值完成数据更新操作
 
 **_`@Query`注解自定义SQL_**
+
 `SpringDataJPA`内部有两种方式可以实现自定义SQL功能，我们先来讲述使用注解的方式，
 后期在`SpringDataJPA`核心技术专题内再详细的讲解使用`EntityManager`是如何完成自定义SQL、调用
 存储过程、视图等等操作的
@@ -631,6 +643,7 @@ public List<User> nativeQuery(int age);
 的sql，如果不配置，默认是false，则使用HQL查询方式
 
 **_@Query配合@Modifying_**
+
 从名字上可以看到我们的`@Query`注解好像只是用来查询的，但是如果配合`@Modifying`注解一共使用，则
 可以完成数据的删除、添加、更新操作
 ```java
@@ -644,6 +657,7 @@ public void deleteQuery(String userName, String pwd);
 的地方添加事务注解`@Transactional`，来开启事务自动化管理
 
 **_`@NoRepositoryBean`_**
+
 >Spring开源程序猿在命名规则上应该是比较严格的，从名字上我们几乎就可以判断出用途，这个注解如果
 配置在继承了`JpaRepository`接口以及其他`SpringDataJpa`内部的接口的子接口时，子接口不被作
 为一个`Repository`创建代理实现类。
@@ -759,9 +773,14 @@ Redis
 4. 丰富的特性 – Redis还支持 publish/subscribe, 通知, key 过期等等特性
 
 **_Redis运行与查看当前缓存_**
-运行：命令行进入Redis解压目录，运行：`redis-server.exe redis.windows.conf`
 
-查看缓存：命令行进入Redis解压目录，运行 `redis-cli.exe` 进入redis命令行模式，然后运行：`keys *` 即可
+*运行：*
+
+命令行进入Redis解压目录，Run：`redis-server.exe redis.windows.conf`
+
+*查看缓存：*
+
+命令行进入Redis解压目录，运行 `redis-cli.exe` 进入redis命令行模式，然后运行：`keys *` 即可
 列出当前所有缓存
 
 >Redis其他的特性，安装运行及高级用法请参照：[Redis教程](http://www.runoob.com/redis/redis-tutorial.html)
@@ -867,6 +886,7 @@ public class UserService {
 类 `RedisConfiguration` 中实现了自定义key生成方式，避免了看不懂key的情况。
 
 **_Redis常用命令_**
+
 - flushdb：清空当前数据库。
 - select [index]：选择索引数据库，index为索引值名，如：select 1。
 - del [key]：删除一条指定key的值。
