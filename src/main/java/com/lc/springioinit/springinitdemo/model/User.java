@@ -2,8 +2,10 @@ package com.lc.springioinit.springinitdemo.model;
 
 import com.lc.springioinit.springinitdemo.base.BaseEntity;
 
+import javax.jdo.annotations.Join;
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Model: User
@@ -40,6 +42,18 @@ public class User extends BaseEntity implements Serializable {
 
     @Column(name = "sord")
     private String sord;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = {
+                    @JoinColumn(name = "ur_user_id")
+            },
+            inverseJoinColumns = {
+                    @JoinColumn(name = "ur_role_id")
+            }
+    )
+    public List<RoleEntity> roles;
 
     public String getSord() {
         return sord;
